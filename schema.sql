@@ -18,10 +18,3 @@ CREATE TABLE IF NOT EXISTS investments (
   note TEXT,
   created_at INTEGER NOT NULL
 );
-
-CREATE TABLE IF NOT EXISTS google_auth (
-  id INTEGER PRIMARY KEY CHECK (id = 1),
-  refresh_token TEXT,
-  access_token TEXT,
-  expires_at INTEGER
-);

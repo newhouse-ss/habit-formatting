@@ -155,14 +155,6 @@
   .year-tab.active{background:var(--accent); color:var(--paper-raised); font-weight:700;}
   .habit-year-count{font-size:.74rem; color:var(--ink-soft); margin-left:auto; font-family:'IBM Plex Mono';}
 
-  .gcal-row{display:flex; gap:12px; padding:8px 4px; border-bottom:1px solid var(--line); align-items:baseline; font-size:.88rem;}
-  .gcal-row:last-child{border-bottom:none;}
-  .gcal-time{color:var(--ink-soft); min-width:100px; flex-shrink:0;}
-  .gcal-title{color:var(--ink); text-decoration:none;}
-  .gcal-title:hover{text-decoration:underline;}
-  .gcal-note{font-size:.78rem; color:var(--ink-soft); margin-top:10px;}
-  .gcal-connect{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;}
-
   @media (max-width:760px){
     .app{flex-direction:column;}
     .sidebar{width:100%; height:auto; position:relative; flex-direction:row; align-items:center; overflow-x:auto; padding:14px 16px; gap:16px;}
@@ -195,11 +187,9 @@
     });
   }
   function todayISO(){ return new Date().toISOString().slice(0,10); }
-  function pad2(n){ return (n<10?'0':'')+n; }
 
   var state = { habits:[], habitLog:{}, investments:[] };
   var ui = { section:'planner', openForm:null, confirmDelete:null, heatYear:new Date().getFullYear(), loadError:null };
-  var gcal = { status:'idle', events:[] };
 
   async function api(path, opts){
     var resp = await fetch(path, opts);
@@ -214,18 +204,6 @@
       ui.loadError = null;
     }catch(e){
       ui.loadError = e.message;
-    }
-    renderMain();
-  }
-
-  async function refreshCalendar(){
-    try{
-      var data = await api('/api/calendar/today');
-      if(!data.connected){ gcal.status='disconnected'; }
-      else if(data.error){ gcal.status='error'; gcal.errorText=data.error; }
-      else { gcal.status='ok'; gcal.events=data.events||[]; }
-    }catch(e){
-      gcal.status='error'; gcal.errorText=e.message;
     }
     renderMain();
   }
@@ -449,40 +427,6 @@
     '</div>';
   }
 
-  // ---------- Google Calendar panel ----------
-  function fmtEventTime(ev){
-    if(ev.start && ev.start.dateTime){
-      var s = new Date(ev.start.dateTime);
-      var sT = pad2(s.getHours())+':'+pad2(s.getMinutes());
-      if(ev.end && ev.end.dateTime){
-        var e = new Date(ev.end.dateTime);
-        return sT+'–'+pad2(e.getHours())+':'+pad2(e.getMinutes());
-      }
-      return sT;
-    }
-    return '全天';
-  }
-
-  function renderGcalPanel(){
-    if(gcal.status==='idle'){
-      return '<div class="card">'+emptyState('正在读取 Google Calendar…')+'</div>';
-    }
-    if(gcal.status==='disconnected'){
-      return '<div class="card gcal-connect">'+
-        '<div><h3 style="font-size:1rem;">连接 Google Calendar</h3><p class="meta">连接后这里会只读展示你今天的日程。</p></div>'+
-        '<a class="btn-outline" href="/auth/google/start">连接 Google Calendar →</a>'+
-      '</div>';
-    }
-    if(gcal.status==='error'){
-      return '<div class="card"><p class="empty">暂时无法读取日历：'+esc(gcal.errorText||'')+'</p></div>';
-    }
-    var body = gcal.events.length ? gcal.events.map(function(ev){
-      return '<div class="gcal-row"><span class="gcal-time mono">'+esc(fmtEventTime(ev))+'</span>'+
-        '<a class="gcal-title" href="'+esc(ev.htmlLink||'#')+'" target="_blank" rel="noopener">'+esc(ev.summary||'（无标题）')+'</a></div>';
-    }).join('') : emptyState('今天的 Google Calendar 没有安排。');
-    return '<div class="card">'+body+'<p class="gcal-note">只读展示，打开页面时刷新一次。</p></div>';
-  }
-
   // ---------- Planner ----------
   function renderPlanner(){
     var todayIso = todayISO();
@@ -505,8 +449,7 @@
       '</form>'+
     '</div>';
 
-    return sectionHead('日常计划表', 'Google Calendar 只读同步今天的日程，习惯打卡看坚持度。') +
-      '<div class="group-title">今日日程（Google Calendar）</div>' + renderGcalPanel() +
+    return sectionHead('日常计划表', '习惯打卡看坚持度。') +
       '<div class="group-title">习惯打卡总览</div>' + overview +
       '<div class="group-title">逐项习惯</div>' + habitSection;
   }
@@ -625,7 +568,6 @@
 
   renderMain();
   refreshState();
-  refreshCalendar();
 })();
 </script>
 </body>
